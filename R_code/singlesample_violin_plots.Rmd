@@ -1,0 +1,86 @@
+
+```{r} 
+
+
+library(ggplot2)
+library(data.table)
+library(patchwork)
+library(dplyr)
+library(tidyr)
+
+#sets working DIR
+setwd("")
+datapath <- ""
+###Violin plots
+
+##violin plots of the Poly(A) in the whole sample
+#reads files and creates a dataframe
+Wholereads1<- fread(paste0(datapath, "/12_Cases_Tconv-7/reads.Poly-A.20240911_1327_MN32174_FAZ54913_6b9afda9.txt"), col.names = c('readID', 'Poly_A_length'))
+Wholereads2<- fread(paste0(datapath, "/11_HD3-ID4-2/reads.Poly-A.Cases-HD3-ID4-2.txt"), col.names = c('readID', 'Poly_A_length'))
+Wholereads3<- fread(paste0(datapath, "/10_HD3-ID4/reads.Poly-A.Cases-HD3-ID4.txt"), col.names = c('readID', 'Poly_A_length'))
+
+#sets read ID-Column to Name of data set
+Wholereads1$sample<-"Cases_Tconv-7"
+Wholereads2$sample<-"Cases-HD3-ID4-2"
+Wholereads3$sample<-"Cases-HD3-ID4"
+
+#combine files to one 
+whole_length <- rbind(Wholereads1, Wholereads2,Wholereads3)
+
+#creates violin plots
+whole_v <- ggplot(whole_length, 
+                  aes(x=sample, y=Poly_A_length)) + 
+                  geom_violin(scale = "width")  + 
+                  geom_boxplot(width=0.03,  outlier.shape = NA) + 
+                  ggtitle ("Length of Poly(A)-Tails in whole genome") + 
+                  theme_classic() +
+                  ylim(0, 100)
+
+
+###Boxplots for proportion of Poly-A-Tails
+
+##whole Genome
+
+#reads counts files
+wholecounts1<- fread(paste0(datapath, "/12_Cases_Tconv-7/counts.whole.Poly-A.20240911_1327_MN32174_FAZ54913_6b9afda9.txt"), col.names = c('count', 'reads'))
+wholecounts2<- fread(paste0(datapath, "/11_HD3-ID4-2/counts.whole.Poly-A.HD3-ID4-2.txt"), col.names = c('count', 'reads'))
+wholecounts3<- fread(paste0(datapath, "/10_HD3-ID4/counts.whole.Poly-A.Cases-HD3-ID-4.txt"), col.names = c('count', 'reads'))
+
+#sets read ID-Column to Name of data set # no poly as are total reads!!!!
+wholecounts1$sample <- "Cases_Tconv-7"; wholecounts1[2, 2] <- "Poly(A)-Tail detected"; wholecounts1[1, 2] <- "no Poly(A)-Tail"
+wholecounts2$sample <- "Cases-HD3-ID4-2"; wholecounts2[2, 2] <- "Poly(A)-Tail detected"; wholecounts2[1, 2] <- "no Poly(A)-Tail"
+wholecounts3$sample <- "Cases-HD3-ID4"; wholecounts3[2, 2] <- "Poly(A)-Tail detected"; wholecounts3[1, 2] <- "no Poly(A)-Tail"
+
+#combine files to one 
+whole_count <- rbind(wholecounts1, wholecounts2,wholecounts3)
+
+# Calculate the proportion for each type within each sample
+#sample 1
+whole_count$count[2] <- wholecounts1$count[2]/wholecounts1$count[1]
+whole_count$count[1] <- 1-whole_count$count[2]
+#sample2
+whole_count$count[4] <- wholecounts2$count[2]/wholecounts2$count[1]
+whole_count$count[3] <- 1-whole_count$count[4]
+#sample3
+whole_count$count[6] <- wholecounts3$count[2]/wholecounts3$count[1]
+whole_count$count[5] <- 1-whole_count$count[6]
+
+
+
+whole_counts <- ggplot(whole_count, aes(fill=reads, y=count , x=sample)) + 
+  geom_bar(stat = "identity")+
+  ggtitle ("Poly(A)-Tails in whole genome") +
+  scale_y_continuous(labels = scales::percent) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+#creating a graph using patchwork
+(whole_counts | whole_v)
+
+#creates a pdf
+pdf(file="polyA_length_depletedruns.pdf", width =12, height = 8) 
+  (whole_v | whole_counts)
+dev.off()
+ 
+
+``` 

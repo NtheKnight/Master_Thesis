@@ -1,0 +1,912 @@
+
+```{r} 
+
+
+library(ggplot2)
+library(data.table)
+library(patchwork)
+library(dplyr)
+library(tidyr)
+library(viridis)
+
+#sets working DIR
+setwd("___/04_Masterarbeit/05_R_Skripte/02_violin_Plots")
+datapath <- "___/04_Data/01_Cases"
+```
+##Violin Plots
+#Poly(A) length in just FOXP3
+
+```{r} 
+###Violin plots
+##violin plots of the Poly(A) in just FOXP3
+#reads files and creates a dataframe
+FOXP3reads1<- fread(paste0(datapath, "/13_Cases-Treg-5/reads.FOXP3.Poly-A.20240917_1258_MN32174_FAZ55036_ddd49ffc.txt"), col.names = c('count', 'Poly_A_length'))
+FOXP3reads2<- fread(paste0(datapath, "/01_Cases-HD3-Treg-3/reads.FOXP3.Poly-A.Cases-HD3-Treg-3.txt"), col.names = c('count', 'Poly_A_length'))
+FOXP3reads3<- fread(paste0(datapath, "/02_Cases-HD3-Treg-6/reads.FOXP3.Poly-A.Cases-HD3-Treg-6.txt"), col.names = c('count', 'Poly_A_length'))
+FOXP3reads4<- fread(paste0(datapath, "/03_20211208_HD42_Lib1_dRNA002/reads.FOXP3.Poly-A.20211208_HD42_Lib1_dRNA002.txt"), col.names = c('count', 'Poly_A_length'))
+FOXP3reads5<- fread(paste0(datapath, "/04_20211209_HD42_Lib2_RNA002/reads.FOXP3.Poly-A.20211209_HD42_Lib2_RNA002.txt"), col.names = c('count', 'Poly_A_length'))
+FOXP3reads6<- fread(paste0(datapath, "/05_20220105_HD43_dRNA_RNA002/reads.FOXP3.Poly-A.20220105_HD43_dRNA_RNA002.txt"), col.names = c('count', 'Poly_A_length'))
+FOXP3reads7<- fread(paste0(datapath, "/08_Cases-Treg-HD2/reads.FOXP3.Poly-A.20240612_1358_MN32174_FAX88319_e12cfcb1.txt"), col.names = c('count', 'Poly_A_length'))
+FOXP3reads8<- fread(paste0(datapath, "/12_Cases_Tconv-7/reads.FOXP3.Poly-A.20240911_1327_MN32174_FAZ54913_6b9afda9.txt"), col.names = c('count', 'Poly_A_length'))
+
+
+#sets read ID-Column to Name of data set
+FOXP3reads1$sample<-"Cases-Treg-5"
+FOXP3reads2$sample<-"Cases-HD3-Treg-3"
+FOXP3reads3$sample<-"Cases-HD3-Treg-6"
+FOXP3reads4$sample<-"HD42_Lib1"
+FOXP3reads5$sample<-"HD42_Lib2"
+FOXP3reads6$sample<-"HD43"
+FOXP3reads7$sample<-"Cases-Treg-HD2"
+FOXP3reads8$sample<-"Cases_Tconv-7"
+
+#combine files to one 
+FOXP3_length <- rbind(FOXP3reads1,FOXP3reads2,FOXP3reads3,FOXP3reads4,FOXP3reads5,FOXP3reads6,FOXP3reads7,FOXP3reads8)
+  #removes unused data, to save RAM capacity
+    rm(FOXP3reads1,FOXP3reads2,FOXP3reads3,FOXP3reads4,FOXP3reads5,FOXP3reads6,FOXP3reads7,FOXP3reads8)
+
+#puts the data into the preferred order
+FOXP3_length$sample <- factor(FOXP3_length$sample,
+                              levels=c("Cases-Treg-HD2","Cases-HD3-Treg-3"))#,"Cases_Tconv-7","Cases-HD3-Treg-6","Cases-Treg-5"))
+
+#removes NA entries (all removed)
+FOXP3_length<-na.omit(FOXP3_length)
+
+#identifies the 002 runs and marks them as a destinct group for filling later
+FOXP3_length$group <- factor(ifelse(FOXP3_length$sample %in% c("HD42_Lib1","HD42_Lib2","HD43"), "002-chemistry", "004-chemistry"))
+
+#creates violin plots
+FOXP3_v <- ggplot(FOXP3_length, aes(x=sample, y=Poly_A_length )) +
+            geom_violin(scale = "width", aes(fill =group))  + 
+            scale_fill_manual(values=c("002-chemistry"="#ffee5a", "004-chemistry"="#2ab07f")) +
+            geom_boxplot(width=0.03, outlier.shape = NA) + 
+            ggtitle ("Length of Poly(A)-Tails\nin FOPX3") + 
+            theme_classic()+
+            labs(x = NULL)+
+            theme(text=element_text(family="serif", size=25))+
+            theme(axis.text.x = element_text(angle = 45, hjust = 1, size=27))+
+            theme(legend.position = "none")
+            #theme(legend.position = "bottom")+
+            #theme(legend.title=element_blank())
+            
+
+(FOXP3_v)
+```
+
+#Poly(A) length in the whole genome
+
+```{r} 
+##violin plots of the Poly(A) in the whole sample
+#reads files and creates a dataframe
+Wholereads1<- fread(paste0(datapath, "/13_Cases-Treg-5/reads.Poly-A.20240917_1258_MN32174_FAZ55036_ddd49ffc.txt"), col.names = c('count', 'Poly_A_length'))
+Wholereads2<- fread(paste0(datapath, "/01_Cases-HD3-Treg-3/reads.Poly-A.Cases-HD3-Treg-3.txt"), col.names = c('count', 'Poly_A_length'))
+Wholereads3<- fread(paste0(datapath, "/02_Cases-HD3-Treg-6/reads.Poly-A.Cases-HD3-Treg-6.txt"), col.names = c('count', 'Poly_A_length'))
+Wholereads4<- fread(paste0(datapath, "/03_20211208_HD42_Lib1_dRNA002/reads.Poly-A.20211208_HD42_Lib1_dRNA002.txt"), col.names = c('count', 'Poly_A_length'))
+Wholereads5<- fread(paste0(datapath, "/04_20211209_HD42_Lib2_RNA002/reads.Poly-A.20211209_HD42_Lib2_RNA002.txt"), col.names = c('count', 'Poly_A_length'))
+Wholereads6<- fread(paste0(datapath, "/05_20220105_HD43_dRNA_RNA002/reads.Poly-A.20220105_HD43_dRNA_RNA002.txt"), col.names = c('count', 'Poly_A_length'))
+Wholereads7<- fread(paste0(datapath, "/08_Cases-Treg-HD2/reads.Poly-A.20240612_1358_MN32174_FAX88319_e12cfcb1.txt"), col.names = c('count', 'Poly_A_length'))
+Wholereads8<- fread(paste0(datapath, "/12_Cases_Tconv-7/reads.Poly-A.20240911_1327_MN32174_FAZ54913_6b9afda9.txt"), col.names = c('count', 'Poly_A_length'))
+
+#sets read ID-Column to Name of data set
+Wholereads1$sample<-"Cases-Treg-5"
+Wholereads2$sample<-"Cases-HD3-Treg-3"
+Wholereads3$sample<-"Cases-HD3-Treg-6"
+Wholereads4$sample<-"HD42_Lib1"
+Wholereads5$sample<-"HD42_Lib2"
+Wholereads6$sample<-"HD43"
+Wholereads7$sample<-"Cases-Treg-HD2"
+Wholereads8$sample<-"Cases_Tconv-7"
+
+#combine files to one 
+whole_length <- rbind(Wholereads1,Wholereads2,Wholereads3,Wholereads4,Wholereads5,Wholereads6,Wholereads7, Wholereads8)
+     #removes unused data, to save RAM capacity
+        rm(Wholereads1,Wholereads2,Wholereads3,Wholereads4,Wholereads5,Wholereads6,Wholereads7, Wholereads8)
+        
+#puts the data into the preferred order
+whole_length$sample <- factor(whole_length$sample,
+                              levels=c("Cases-Treg-HD2","Cases-HD3-Treg-3"))#,"Cases_Tconv-7","Cases-HD3-Treg-6","Cases-Treg-5"))
+
+#removes NA entries (all removed)
+whole_length<-na.omit(whole_length)
+
+#identifies the 002 runs and marks them as a destinct group for filling later
+whole_length$group <- factor(ifelse(whole_length$sample %in% c("HD42_Lib1","HD42_Lib2","HD43"), "002-chemistry", "004-chemistry"))
+
+#creates violin plots
+whole_v <- ggplot(whole_length, aes(x=sample, y=Poly_A_length)) +
+            geom_violin(scale = "width", aes(fill =group))  + 
+            scale_fill_manual(values=c("002-chemistry"="#ffee5a", "004-chemistry"="#2ab07f")) +
+            geom_boxplot(width=0.03,  outlier.shape = NA) +
+            ggtitle ("Length of Poly(A)-Tails\nin whole genome") +
+            labs(x = NULL)+
+            theme_classic() +
+            theme(text=element_text(family="serif", size=25))+
+            theme(axis.text.x = element_text(angle = 45, hjust = 1, size=27))+
+            theme(legend.position = "none")
+           #theme(legend.position = "bottom")+
+           #theme(legend.title=element_blank())
+#(whole_v)
+
+```
+
+
+#Poly(A) length in the whole genome zoomed to foxp3
+```{r}                   
+#creates violin plots
+whole_zoom_v <- ggplot(whole_length, aes(x=sample, y=Poly_A_length)) +
+            geom_violin(scale = "width", aes(fill =group))  + 
+            scale_fill_manual(values=c("002-chemistry"="#ffee5a", "004-chemistry"="#2ab07f")) +
+            geom_boxplot(width=0.03,  outlier.shape = NA) +
+            scale_y_continuous(limits = c(0, 400)) +
+            ggtitle ("Length of Poly(A)-Tails\nin whole genome (zoomed)") +
+            labs(x = NULL)+
+            theme_classic()    +
+            theme(text=element_text(family="serif", size=25))+
+            theme(axis.text.x = element_text(angle = 45, hjust = 1, size=27))+
+            theme(legend.position = "none")
+            #theme(legend.position = "bottom")+
+            #theme(legend.title=element_blank())
+```
+
+##Boxplots
+#Poly-A-detection in FOXP3
+
+```{r} 
+###Boxplots for proportion of Poly-A-Tails
+##just FOXP3
+
+#reads files and creates a dataframe
+FOXP3counts1<- fread(paste0(datapath, "/13_Cases-Treg-5/counts.FOXP3.Poly-A.20240917_1258_MN32174_FAZ55036_ddd49ffc.txt"), col.names = c('count', 'reads'))
+FOXP3counts2<- fread(paste0(datapath, "/01_Cases-HD3-Treg-3/counts.FOXP3.Poly-A.Cases-HD3-Treg-3.txt"), col.names = c('count', 'reads'))
+FOXP3counts3<- fread(paste0(datapath, "/02_Cases-HD3-Treg-6/counts.FOXP3.Poly-A.Cases-HD3-Treg-6.txt"), col.names = c('count', 'reads'))
+FOXP3counts4<- fread(paste0(datapath, "/03_20211208_HD42_Lib1_dRNA002/counts.FOXP3.Poly-A.20211208_HD42_Lib1_dRNA002.txt"), col.names = c('count', 'reads'))
+FOXP3counts5<- fread(paste0(datapath, "/04_20211209_HD42_Lib2_RNA002/counts.FOXP3.Poly-A.20211209_HD42_Lib2_RNA002.txt"), col.names = c('count', 'reads'))
+FOXP3counts6<- fread(paste0(datapath, "/05_20220105_HD43_dRNA_RNA002/counts.FOXP3.Poly-A.20220105_HD43_dRNA_RNA002.txt"), col.names = c('count', 'reads'))
+FOXP3counts7<- fread(paste0(datapath, "/08_Cases-Treg-HD2/counts.FOXP3.Poly-A.20240612_1358_MN32174_FAX88319_e12cfcb1.txt"), col.names = c('count', 'reads'))
+FOXP3counts8<- fread(paste0(datapath, "/12_Cases_Tconv-7/counts.FOXP3.Poly-A.20240911_1327_MN32174_FAZ54913_6b9afda9.txt"), col.names = c('count', 'reads'))
+
+#sets read ID-Column to Name of data set
+FOXP3counts1$sample <- "Cases-Treg-5"; FOXP3counts1[1, 2] <- "no Poly(A)-Tail"; FOXP3counts1[2, 2] <- "Poly(A)-Tail detected"
+FOXP3counts2$sample <- "Cases-HD3-Treg-3"; FOXP3counts2[1, 2] <- "no Poly(A)-Tail"; FOXP3counts2[2, 2] <- "Poly(A)-Tail detected"
+FOXP3counts3$sample <- "Cases-HD3-Treg-6"; FOXP3counts3[1, 2] <- "no Poly(A)-Tail"; FOXP3counts3[2, 2] <- "Poly(A)-Tail detected"
+FOXP3counts4$sample <- "HD42_Lib1"; FOXP3counts4[1, 2] <- "no Poly(A)-Tail"; FOXP3counts4[2, 2] <- "Poly(A)-Tail detected"
+FOXP3counts5$sample <- "HD42_Lib2"; FOXP3counts5[1, 2] <- "no Poly(A)-Tail"; FOXP3counts5[2, 2] <- "Poly(A)-Tail detected"
+FOXP3counts6$sample <- "HD43"; FOXP3counts6[1, 2] <- "no Poly(A)-Tail"; FOXP3counts6[2, 2] <- "Poly(A)-Tail detected"
+FOXP3counts7$sample <- "Cases-Treg-HD2"; FOXP3counts7[1, 2] <- "no Poly(A)-Tail"; FOXP3counts7[2, 2] <- "Poly(A)-Tail detected"
+FOXP3counts8$sample <- "Cases_Tconv-7"; FOXP3counts8[1, 2] <- "no Poly(A)-Tail"; FOXP3counts8[2, 2] <- "Poly(A)-Tail detected"
+
+
+#combine files to one 
+count <- rbind(FOXP3counts1,FOXP3counts2,FOXP3counts3,FOXP3counts4,FOXP3counts5,FOXP3counts6,FOXP3counts7,FOXP3counts8 )
+
+# Calculate the proportion for each type within each sample
+#sample 1
+count$count[2] <- FOXP3counts1$count[2]/FOXP3counts1$count[1]
+count$count[1] <- 1-count$count[2]
+count$count[4] <- FOXP3counts2$count[2]/FOXP3counts2$count[1]
+count$count[3] <- 1-count$count[4]
+count$count[6] <- FOXP3counts3$count[2]/FOXP3counts3$count[1]
+count$count[5] <- 1-count$count[6]
+count$count[8] <- FOXP3counts4$count[2]/FOXP3counts4$count[1]
+count$count[7] <- 1-count$count[8]
+count$count[10] <- FOXP3counts5$count[2]/FOXP3counts5$count[1]
+count$count[9] <- 1-count$count[10]
+count$count[12] <- FOXP3counts6$count[2]/FOXP3counts6$count[1]
+count$count[11] <- 1-count$count[12]
+count$count[14] <- FOXP3counts7$count[2]/FOXP3counts7$count[1]
+count$count[13] <- 1-count$count[14]
+count$count[16] <- FOXP3counts8$count[2]/FOXP3counts8$count[1]
+count$count[15] <- 1-count$count[16]
+
+  #removes unused data, to save RAM capacity
+   rm(FOXP3counts1,FOXP3counts2,FOXP3counts3,FOXP3counts4,FOXP3counts5,FOXP3counts6,FOXP3counts7,FOXP3counts8)
+   
+#puts the data into the preferred order
+count$sample <- factor(count$sample,
+                              levels=c("Cases-Treg-HD2","Cases-HD3-Treg-3"))#,"Cases_Tconv-7","Cases-HD3-Treg-6","Cases-Treg-5"))
+
+#removes NA entries (all removed)
+count<-na.omit(count)
+
+
+FOXP3_counts <- ggplot(count, aes(fill=reads, y=count , x=sample)) + 
+  geom_bar(stat = "identity") +
+  #geom_rect(aes(xmin = 0.5, xmax = 3.5, ymin = -Inf, ymax = Inf), fill = NA, color = "#ffee5a", lwd = 1.5) +
+  #geom_rect(aes(xmin = 3.5, xmax = 5.5, ymin = -Inf, ymax = Inf), fill = NA, color = "#2ab07f", lwd = 1.5) +
+  ggtitle ("Poly(A)-Tails in FOXP3") +
+  labs(x = NULL) +
+  scale_fill_manual(values=c("#feca8d","#9e2f7f")) +
+  scale_y_continuous(labels = scales::percent) +
+  theme_classic()+
+  theme(legend.position = "bottom") +
+  theme(legend.title=element_blank()) +
+  theme(text=element_text(family="serif", size=25)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size=27))
+
+
+#(FOXP3_counts)
+
+```
+
+#Poly-A-detection in the whole genome
+```{r} 
+##whole Genome
+
+#reads files and creates a dataframe
+wholecounts1<- fread(paste0(datapath, "/13_Cases-Treg-5/counts.whole.Poly-A.20240917_1258_MN32174_FAZ55036_ddd49ffc.txt"), col.names = c('count', 'reads'))
+wholecounts2<- fread(paste0(datapath, "/01_Cases-HD3-Treg-3/counts.whole.Poly-A.Cases-HD3-Treg-3.txt"), col.names = c('count', 'reads'))
+wholecounts3<- fread(paste0(datapath, "/02_Cases-HD3-Treg-6/counts.whole.Poly-A.Cases-HD3-Treg-6.txt"), col.names = c('count', 'reads'))
+wholecounts4<- fread(paste0(datapath, "/03_20211208_HD42_Lib1_dRNA002/counts.whole.Poly-A.20211208_HD42_Lib1_dRNA002.txt"), col.names = c('count', 'reads'))
+wholecounts5<- fread(paste0(datapath, "/04_20211209_HD42_Lib2_RNA002/counts.whole.Poly-A.20211209_HD42_Lib2_RNA002.txt"), col.names = c('count', 'reads'))
+wholecounts6<- fread(paste0(datapath, "/05_20220105_HD43_dRNA_RNA002/counts.whole.Poly-A.20220105_HD43_dRNA_RNA002.txt"), col.names = c('count', 'reads'))
+wholecounts7<- fread(paste0(datapath, "/08_Cases-Treg-HD2/counts.whole.Poly-A.20240612_1358_MN32174_FAX88319_e12cfcb1.txt"), col.names = c('count', 'reads'))
+wholecounts8<- fread(paste0(datapath, "/12_Cases_Tconv-7/counts.whole.Poly-A.20240911_1327_MN32174_FAZ54913_6b9afda9.txt"), col.names = c('count', 'reads'))
+
+#sets read ID-Column to Name of data set
+wholecounts1$sample <- "Cases-Treg-5"; wholecounts1[1, 2] <- "no Poly(A)-Tail"; wholecounts1[2, 2] <- "Poly(A)-Tail detected"
+wholecounts2$sample <- "Cases-HD3-Treg-3"; wholecounts2[1, 2] <- "no Poly(A)-Tail"; wholecounts2[2, 2] <- "Poly(A)-Tail detected"
+wholecounts3$sample <- "Cases-HD3-Treg-6"; wholecounts3[1, 2] <- "no Poly(A)-Tail"; wholecounts3[2, 2] <- "Poly(A)-Tail detected"
+wholecounts4$sample <- "HD42_Lib1"; wholecounts4[1, 2] <- "no Poly(A)-Tail"; wholecounts4[2, 2] <- "Poly(A)-Tail detected"
+wholecounts5$sample <- "HD42_Lib2"; wholecounts5[1, 2] <- "no Poly(A)-Tail"; wholecounts5[2, 2] <- "Poly(A)-Tail detected"
+wholecounts6$sample <- "HD43"; wholecounts6[1, 2] <- "no Poly(A)-Tail"; wholecounts6[2, 2] <- "Poly(A)-Tail detected"
+wholecounts7$sample <- "Cases-Treg-HD2"; wholecounts7[1, 2] <- "no Poly(A)-Tail"; wholecounts7[2, 2] <- "Poly(A)-Tail detected"
+wholecounts8$sample <- "Cases_Tconv-7"; wholecounts8[1, 2] <- "no Poly(A)-Tail"; wholecounts8[2, 2] <- "Poly(A)-Tail detected"
+
+
+#combine files to one 
+whole_count <- rbind(wholecounts1,wholecounts2,wholecounts3,wholecounts4,wholecounts5,wholecounts6,wholecounts7, wholecounts8)
+
+
+
+# Calculate the proportion for each type within each sample
+#sample 1
+whole_count$count[2] <- wholecounts1$count[2]/wholecounts1$count[1]
+whole_count$count[1] <- 1-whole_count$count[2]
+whole_count$count[4] <- wholecounts2$count[2]/wholecounts2$count[1]
+whole_count$count[3] <- 1-whole_count$count[4]
+whole_count$count[6] <- wholecounts3$count[2]/wholecounts3$count[1]
+whole_count$count[5] <- 1-whole_count$count[6]
+whole_count$count[8] <- wholecounts4$count[2]/wholecounts4$count[1]
+whole_count$count[7] <- 1-whole_count$count[8]
+whole_count$count[10] <- wholecounts5$count[2]/wholecounts5$count[1]
+whole_count$count[9] <- 1-whole_count$count[10]
+whole_count$count[12] <- wholecounts6$count[2]/wholecounts6$count[1]
+whole_count$count[11] <- 1-whole_count$count[12]
+whole_count$count[14] <- wholecounts7$count[2]/wholecounts7$count[1]
+whole_count$count[13] <- 1-whole_count$count[14]
+whole_count$count[16] <- wholecounts8$count[2]/wholecounts8$count[1]
+whole_count$count[15] <- 1-whole_count$count[16]
+
+  #removes unused data, to save RAM capacity
+    rm(wholecounts1,wholecounts2,wholecounts3,wholecounts4,wholecounts5,wholecounts6,wholecounts7, wholecounts8)
+
+#puts the data into the preferred order
+whole_count$sample <- factor(whole_count$sample,
+                              levels=c("Cases-Treg-HD2","Cases-HD3-Treg-3"))#,"Cases_Tconv-7","Cases-HD3-Treg-6","Cases-Treg-5"))
+
+#removes NA entries (all removed)
+whole_count<-na.omit(whole_count)
+
+whole_counts <- ggplot(whole_count, aes(fill=reads, y=count , x=sample)) + 
+  geom_bar(stat = "identity")+
+  ggtitle ("Poly(A)-Tails in whole genome") +
+  #geom_rect(aes(xmin = 0.5, xmax = 3.5, ymin = -Inf, ymax = Inf), fill = NA, color = "#ffee5a", lwd = 1.5) +
+  #geom_rect(aes(xmin = 3.5, xmax = 5.5, ymin = -Inf, ymax = Inf), fill = NA, color = "#2ab07f", lwd = 1.5) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(x = NULL)+
+  theme_classic()+
+  theme(legend.position = "bottom")+
+  theme(legend.title=element_blank())+
+  scale_fill_manual(values = c("#feca8d","#9e2f7f"))+
+  theme(text=element_text(family="serif", size=25))+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size=27))
+
+#(whole_counts)
+
+``` 
+##Plot Creation of Poly-A Overview 
+```{r} 
+#creating a graph using patchwork
+#(FOXP3_v | whole_v | whole_zoom_v) /
+#(FOXP3_counts | whole_counts)
+
+```
+
+##Stacked Bar plots
+#Composition of aligned reads
+```{r} 
+##  
+#reads counts files of HG38 align
+HG38_readcount1<- fread(paste0(datapath, "/13_Cases-Treg-5/readcount.totalHG38.alignment.txt"), col.names = c('count', 'readtype'))
+HG38_readcount2<- fread(paste0(datapath, "/01_Cases-HD3-Treg-3/readcount.totalHG38.alignment.txt"), col.names = c('count', 'readtype'))
+HG38_readcount3<- fread(paste0(datapath, "/02_Cases-HD3-Treg-6/readcount.totalHG38.alignment.txt"), col.names = c('count', 'readtype'))
+HG38_readcount4<- fread(paste0(datapath, "/03_20211208_HD42_Lib1_dRNA002/readcount.totalHG38.alignment.txt"), col.names = c('count', 'readtype'))
+HG38_readcount5<- fread(paste0(datapath, "/04_20211209_HD42_Lib2_RNA002/readcount.totalHG38.alignment.txt"), col.names = c('count', 'readtype'))
+HG38_readcount6<- fread(paste0(datapath, "/05_20220105_HD43_dRNA_RNA002/readcount.totalHG38.alignment.txt"), col.names = c('count', 'readtype'))
+HG38_readcount7<- fread(paste0(datapath, "/08_Cases-Treg-HD2/readcount.totalHG38.alignment.txt"), col.names = c('count', 'readtype'))
+HG38_readcount8<- fread(paste0(datapath, "/12_Cases_Tconv-7/readcount.totalHG38.alignment.txt"), col.names = c('count', 'readtype'))
+
+  #changes values to appropriate type
+  HG38_readcount1$readtype <- with(HG38_readcount1, ifelse(readtype %in% c(0, 16), "aligned", 
+                                    ifelse(readtype == 4, "non aligned",
+                                        "supplemental")))
+  HG38_readcount2$readtype <- with(HG38_readcount2, ifelse(readtype %in% c(0, 16), "aligned", 
+                                    ifelse(readtype == 4, "non aligned",
+                                        "supplemental")))
+  HG38_readcount3$readtype <- with(HG38_readcount3, ifelse(readtype %in% c(0, 16), "aligned", 
+                                    ifelse(readtype == 4, "non aligned",
+                                        "supplemental")))
+  HG38_readcount4$readtype <- with(HG38_readcount4, ifelse(readtype %in% c(0, 16), "aligned", 
+                                    ifelse(readtype == 4, "non aligned",
+                                        "supplemental")))
+  HG38_readcount5$readtype <- with(HG38_readcount5, ifelse(readtype %in% c(0, 16), "aligned", 
+                                    ifelse(readtype == 4, "non aligned",
+                                        "supplemental")))
+  HG38_readcount6$readtype <- with(HG38_readcount6, ifelse(readtype %in% c(0, 16), "aligned", 
+                                    ifelse(readtype == 4, "non aligned",
+                                        "supplemental")))
+  HG38_readcount7$readtype <- with(HG38_readcount7, ifelse(readtype %in% c(0, 16), "aligned", 
+                                    ifelse(readtype == 4, "non aligned",
+                                        "supplemental")))
+  HG38_readcount8$readtype <- with(HG38_readcount8, ifelse(readtype %in% c(0, 16), "aligned", 
+                                    ifelse(readtype == 4, "non aligned",
+                                        "supplemental")))
+  
+  #add sampletype to data
+  HG38_readcount1$sample <- "Cases-Treg-5"
+  HG38_readcount1$type <- "HG38"
+  HG38_readcount2$sample <- "Cases-HD3-Treg-3"
+  HG38_readcount2$type <- "HG38"
+  HG38_readcount3$sample <- "Cases-HD3-Treg-6"
+  HG38_readcount3$type <- "HG38"
+  HG38_readcount4$sample <- "HD42_Lib1"
+  HG38_readcount4$type <- "HG38"
+  HG38_readcount5$sample <- "HD42_Lib2"
+  HG38_readcount5$type <- "HG38"
+  HG38_readcount6$sample <- "HD43"
+  HG38_readcount6$type <- "HG38"
+  HG38_readcount7$sample <- "Cases-Treg-HD2"
+  HG38_readcount7$type <- "HG38"
+  HG38_readcount8$sample <- "Cases_Tconv-7" 
+  HG38_readcount8$type <- "HG38"
+
+##reads counts files of HG38&ENO2 align
+all_readcount1<- fread(paste0(datapath, "/13_Cases-Treg-5/readcount.totalHG38_ENO2.alignment.txt"), col.names = c('count', 'readtype'))
+all_readcount2<- fread(paste0(datapath, "/01_Cases-HD3-Treg-3/readcount.totalHG38_ENO2.alignment.txt"), col.names = c('count', 'readtype'))
+all_readcount3<- fread(paste0(datapath, "/02_Cases-HD3-Treg-6/readcount.totalHG38_ENO2.alignment.txt"), col.names = c('count', 'readtype'))
+all_readcount4<- fread(paste0(datapath, "/03_20211208_HD42_Lib1_dRNA002/readcount.totalHG38_ENO2.alignment.txt"), col.names = c('count', 'readtype'))
+all_readcount5<- fread(paste0(datapath, "/04_20211209_HD42_Lib2_RNA002/readcount.totalHG38_ENO2.alignment.txt"), col.names = c('count', 'readtype'))
+all_readcount6<- fread(paste0(datapath, "/05_20220105_HD43_dRNA_RNA002/readcount.totalHG38_ENO2.alignment.txt"), col.names = c('count', 'readtype'))
+all_readcount7<- fread(paste0(datapath, "/08_Cases-Treg-HD2/readcount.totalHG38_ENO2.alignment.txt"), col.names = c('count', 'readtype'))
+all_readcount8<- fread(paste0(datapath, "/12_Cases_Tconv-7/readcount.totalHG38_ENO2.alignment.txt"), col.names = c('count', 'readtype'))
+
+  #changes values to appropriate type
+  all_readcount1$readtype <- with(all_readcount1, ifelse(readtype %in% c(0, 16), "aligned", 
+                                    ifelse(readtype == 4, "non aligned",
+                                        "supplemental")))
+  all_readcount2$readtype <- with(all_readcount2, ifelse(readtype %in% c(0, 16), "aligned", 
+                                    ifelse(readtype == 4, "non aligned",
+                                        "supplemental")))
+  all_readcount3$readtype <- with(all_readcount3, ifelse(readtype %in% c(0, 16), "aligned", 
+                                    ifelse(readtype == 4, "non aligned",
+                                        "supplemental")))
+  all_readcount4$readtype <- with(all_readcount4, ifelse(readtype %in% c(0, 16), "aligned", 
+                                    ifelse(readtype == 4, "non aligned",
+                                        "supplemental")))
+  all_readcount5$readtype <- with(all_readcount5, ifelse(readtype %in% c(0, 16), "aligned", 
+                                    ifelse(readtype == 4, "non aligned",
+                                        "supplemental")))
+  all_readcount6$readtype <- with(all_readcount6, ifelse(readtype %in% c(0, 16), "aligned", 
+                                    ifelse(readtype == 4, "non aligned",
+                                        "supplemental")))
+  all_readcount7$readtype <- with(all_readcount7, ifelse(readtype %in% c(0, 16), "aligned", 
+                                    ifelse(readtype == 4, "non aligned",
+                                        "supplemental")))
+  all_readcount8$readtype <- with(all_readcount8, ifelse(readtype %in% c(0, 16), "aligned", 
+                                    ifelse(readtype == 4, "non aligned",
+                                        "supplemental")))
+
+  #add sampletype to data
+  all_readcount1$sample <- "Cases-Treg-5"
+  all_readcount1$type <- "all"
+  all_readcount2$sample <- "Cases-HD3-Treg-3"
+  all_readcount2$type <- "all"
+  all_readcount3$sample <- "Cases-HD3-Treg-6"
+  all_readcount3$type <- "all"
+  all_readcount4$sample <- "HD42_Lib1"
+  all_readcount4$type <- "all"
+  all_readcount5$sample <- "HD42_Lib2"
+  all_readcount5$type <- "all"
+  all_readcount6$sample <- "HD43"
+  all_readcount6$type <- "all"
+  all_readcount7$sample <- "Cases-Treg-HD2"
+  all_readcount7$type <- "all"
+  all_readcount8$sample <- "Cases_Tconv-7" 
+  all_readcount8$type <- "all" 
+ 
+##reads counts files of just ENO2 align
+ENO2_readcount1<- fread(paste0(datapath, "/13_Cases-Treg-5/readcount.ENO2.alignment.txt"), col.names = c('count', 'readtype'))
+ENO2_readcount2<- fread(paste0(datapath, "/01_Cases-HD3-Treg-3/readcount.ENO2.alignment.txt"), col.names = c('count', 'readtype'))
+ENO2_readcount3<- fread(paste0(datapath, "/02_Cases-HD3-Treg-6/readcount.ENO2.alignment.txt"), col.names = c('count', 'readtype'))
+ENO2_readcount4<- fread(paste0(datapath, "/03_20211208_HD42_Lib1_dRNA002/readcount.ENO2.alignment.txt"), col.names = c('count', 'readtype'))
+ENO2_readcount5<- fread(paste0(datapath, "/04_20211209_HD42_Lib2_RNA002/readcount.ENO2.alignment.txt"), col.names = c('count', 'readtype'))
+ENO2_readcount6<- fread(paste0(datapath, "/05_20220105_HD43_dRNA_RNA002/readcount.ENO2.alignment.txt"), col.names = c('count', 'readtype'))
+ENO2_readcount7<- fread(paste0(datapath, "/08_Cases-Treg-HD2/readcount.ENO2.alignment.txt"), col.names = c('count', 'readtype'))
+ENO2_readcount8<- fread(paste0(datapath, "/12_Cases_Tconv-7/readcount.ENO2.alignment.txt"), col.names = c('count', 'readtype'))
+
+  #changes values to appropriate type
+  ENO2_readcount1$readtype <- with(ENO2_readcount1, ifelse(readtype %in% c(0, 16), "aligned", 
+                                    ifelse(readtype == 4, "non aligned",
+                                        "supplemental")))
+  ENO2_readcount2$readtype <- with(ENO2_readcount2, ifelse(readtype %in% c(0, 16), "aligned", 
+                                    ifelse(readtype == 4, "non aligned",
+                                        "supplemental")))
+  ENO2_readcount3$readtype <- with(ENO2_readcount3, ifelse(readtype %in% c(0, 16), "aligned", 
+                                    ifelse(readtype == 4, "non aligned",
+                                        "supplemental")))
+  ENO2_readcount4$readtype <- with(ENO2_readcount4, ifelse(readtype %in% c(0, 16), "aligned", 
+                                    ifelse(readtype == 4, "non aligned",
+                                        "supplemental")))
+  ENO2_readcount5$readtype <- with(ENO2_readcount5, ifelse(readtype %in% c(0, 16), "aligned", 
+                                    ifelse(readtype == 4, "non aligned",
+                                        "supplemental")))
+  ENO2_readcount6$readtype <- with(ENO2_readcount6, ifelse(readtype %in% c(0, 16), "aligned", 
+                                    ifelse(readtype == 4, "non aligned",
+                                        "supplemental")))
+  ENO2_readcount7$readtype <- with(ENO2_readcount7, ifelse(readtype %in% c(0, 16), "aligned", 
+                                    ifelse(readtype == 4, "non aligned",
+                                        "supplemental")))
+  ENO2_readcount8$readtype <- with(ENO2_readcount8, ifelse(readtype %in% c(0, 16), "aligned", 
+                                    ifelse(readtype == 4, "non aligned",
+                                        "supplemental")))
+
+  #add sampletype to data
+  ENO2_readcount1$sample <- "Cases-Treg-5"
+  ENO2_readcount1$type <- "ENO2"
+  ENO2_readcount2$sample <- "Cases-HD3-Treg-3"
+  ENO2_readcount2$type <- "ENO2"
+  ENO2_readcount3$sample <- "Cases-HD3-Treg-6"
+  ENO2_readcount3$type <- "ENO2"
+  ENO2_readcount4$sample <- "HD42_Lib1"
+  ENO2_readcount4$type <- "ENO2"
+  ENO2_readcount5$sample <- "HD42_Lib2"
+  ENO2_readcount5$type <- "ENO2"
+  ENO2_readcount6$sample <- "HD43"
+  ENO2_readcount6$type <- "ENO2"
+  ENO2_readcount7$sample <- "Cases-Treg-HD2"
+  ENO2_readcount7$type <- "ENO2"
+  ENO2_readcount8$sample <- "Cases_Tconv-7" 
+  ENO2_readcount8$type <- "ENO2"  
+
+#combine all files into one for graph creation
+readcomposition <- rbind(HG38_readcount1, all_readcount1, ENO2_readcount1,
+                         HG38_readcount2, all_readcount2, ENO2_readcount2,
+                         HG38_readcount3, all_readcount3, ENO2_readcount3,
+                         HG38_readcount4, all_readcount4, ENO2_readcount4,
+                         HG38_readcount5, all_readcount5, ENO2_readcount5,
+                         HG38_readcount6, all_readcount6, ENO2_readcount6,
+                         HG38_readcount7, all_readcount7, ENO2_readcount7,
+                         HG38_readcount8, all_readcount8, ENO2_readcount8)
+  #removes unused data, to save RAM capacity
+          rm(HG38_readcount1, all_readcount1, ENO2_readcount1,
+                         HG38_readcount2, all_readcount2, ENO2_readcount2,
+                         HG38_readcount3, all_readcount3, ENO2_readcount3,
+                         HG38_readcount4, all_readcount4, ENO2_readcount4,
+                         HG38_readcount5, all_readcount5, ENO2_readcount5,
+                         HG38_readcount6, all_readcount6, ENO2_readcount6,
+                         HG38_readcount7, all_readcount7, ENO2_readcount7,
+                         HG38_readcount8, all_readcount8, ENO2_readcount8)
+          
+# Filter the data according to your conditions
+readcomposition_filtered <- readcomposition[(readcomposition$readtype == "aligned" & readcomposition$type == "HG38") | 
+                                            (readcomposition$readtype == "non aligned" & readcomposition$type == "all") | 
+                                            (readcomposition$readtype == "aligned" & readcomposition$type == "ENO2"),]
+
+# Sum the count for each group 
+readcomposition_summary <- aggregate(count ~ sample+readtype+type, readcomposition_filtered, sum )
+
+# Creates legend for plot
+readcomposition_summary$legend <- readcomposition_summary$type
+readcomposition_summary$legend[readcomposition_summary$readtype == "non aligned"] <- "non aligned"
+
+#Calculate the proportion for each group
+readcomposition_summary <- within(readcomposition_summary, {
+  prop <- ave(count, sample, FUN=function(x) x/sum(x)*100)
+})
+
+#puts the data into the preferred order
+readcomposition_summary$sample <- factor(readcomposition_summary$sample,
+                              levels=c("Cases-Treg-HD2","Cases-HD3-Treg-3"))#,"Cases_Tconv-7","Cases-HD3-Treg-6","Cases-Treg-5"))
+
+#removes NA entries (all removed)
+readcomposition_summary<-na.omit(readcomposition_summary)
+
+#creates stacked bar plot
+readcomposition_bp <- ggplot(readcomposition_summary, aes(x=sample, y=prop, fill=legend)) +
+  geom_bar(stat="identity", position="stack") +
+  xlab("Sample") +
+  ylab("Percentage") +
+  labs(x = NULL)+
+  ggtitle("Genome alignment of reads") +
+  #geom_rect(aes(xmin = 0.5, xmax = 3.5, ymin = -Inf, ymax = Inf), fill = NA, color = "#ffee5a", lwd = 1.5) +
+  #geom_rect(aes(xmin = 3.5, xmax = 5.5, ymin = -Inf, ymax = Inf), fill = NA, color = "#2ab07f", lwd = 1.5) +
+  scale_y_continuous(labels = function(y) paste0(y, "%")) +
+  scale_fill_manual(values = c("#f68d45","#d5546e","#a62098"))+
+  geom_text(aes(label=paste0(round(prop,1),"%")),size =7, position=position_stack(vjust=0.5)) +
+  theme_classic()+
+  theme(legend.position = "bottom")+
+  theme(legend.title=element_blank())+
+  theme(text=element_text(family="serif", size=25))+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size=27))
+
+
+``` 
+
+##Plot Creation of alignment overview
+```{r} 
+
+#(readcomposition_bp)
+
+``` 
+
+##Violin Plots
+#Read length distribution 
+#all aligning reads 
+```{r} 
+#reads files and creates a dataframe
+all_readslength1<- fread(paste0(datapath, "/13_Cases-Treg-5/readlength.all.aligning.txt"), col.names = c('readlength'))
+all_readslength2<- fread(paste0(datapath, "/01_Cases-HD3-Treg-3/readlength.all.aligning.txt"), col.names = c('readlength'))
+all_readslength3<- fread(paste0(datapath, "/02_Cases-HD3-Treg-6/readlength.all.aligning.txt"), col.names = c('readlength'))
+all_readslength4<- fread(paste0(datapath, "/03_20211208_HD42_Lib1_dRNA002/readlength.all.aligning.txt"), col.names = c('readlength'))
+all_readslength5<- fread(paste0(datapath, "/04_20211209_HD42_Lib2_RNA002/readlength.all.aligning.txt"), col.names = c('readlength'))
+all_readslength6<- fread(paste0(datapath, "/05_20220105_HD43_dRNA_RNA002/readlength.all.aligning.txt"), col.names = c('readlength'))
+all_readslength7<- fread(paste0(datapath, "/08_Cases-Treg-HD2/readlength.all.aligning.txt"), col.names = c('readlength'))
+all_readslength8<- fread(paste0(datapath, "/12_Cases_Tconv-7/readlength.all.aligning.txt"), col.names = c('readlength'))
+
+
+#sets read ID-Column to Name of data set
+all_readslength1$sample<-"Cases-Treg-5"
+all_readslength2$sample<-"Cases-HD3-Treg-3"
+all_readslength3$sample<-"Cases-HD3-Treg-6"
+all_readslength4$sample<-"HD42_Lib1"
+all_readslength5$sample<-"HD42_Lib2"
+all_readslength6$sample<-"HD43"
+all_readslength7$sample<-"Cases-Treg-HD2"
+all_readslength8$sample<-"Cases_Tconv-7"
+
+#combine files to one 
+whole_allreadslength <- rbind(all_readslength1,all_readslength2,all_readslength3,all_readslength4,all_readslength5,all_readslength6,all_readslength7,all_readslength8)
+   #removes unused data, to save RAM capacity
+          rm(all_readslength1,all_readslength2,all_readslength3,all_readslength4,all_readslength5,all_readslength6,all_readslength7,all_readslength8)
+
+#puts the data into the preferred order
+whole_allreadslength$sample <- factor(whole_allreadslength$sample,
+                              levels=c("Cases-Treg-HD2","Cases-HD3-Treg-3"))#,"Cases_Tconv-7","Cases-HD3-Treg-6","Cases-Treg-5"))
+
+#removes NA entries (all removed)
+whole_allreadslength<-na.omit(whole_allreadslength)
+
+
+#identifies the 002 runs and marks them as a destinct group for filling later
+whole_allreadslength$group <- factor(ifelse(whole_allreadslength$sample %in% c("HD42_Lib1","HD42_Lib2","HD43"), "002-chemistry", "004-chemistry"))          
+ 
+#creates violin plots
+all_readslength_v <- ggplot(whole_allreadslength, 
+                  aes(x=sample, y=readlength)) + 
+                  geom_violin(scale = "width", aes(fill =group))  + 
+                  scale_fill_manual(values=c("002-chemistry"="#ffee5a", "004-chemistry"="#2ab07f")) + 
+                  geom_boxplot(width=0.03,  outlier.shape = NA) + 
+                  labs(x = NULL)+
+                  scale_y_continuous(limits = c(0, 5000)) +
+                  ggtitle ("Length of all aligning reads") + 
+                  theme_classic() + 
+                  theme(text=element_text(family="serif", size=25))+
+                  theme(axis.text.x = element_text(angle = 45, hjust = 1, size=27))+
+                  theme(legend.position = "none")
+                  #theme(legend.position = "bottom")+
+                  #theme(legend.title=element_blank())
+
+#(all_readslength_v)
+``` 
+
+#Read length distribution 
+#all reads after basecalling
+#this was no longer needed!
+```{r} 
+#reads files and creates a dataframe
+#dorado_readslength1<- fread(paste0(datapath, "/13_Cases-Treg-5/readlength.dorado.txt"), col.names = c('readlength'))
+#dorado_readslength2<- fread(paste0(datapath, "/01_Cases-HD3-Treg-3/readlength.dorado.txt"), col.names = c('readlength'))
+#dorado_readslength3<- fread(paste0(datapath, "/02_Cases-HD3-Treg-6/readlength.dorado.txt"), col.names = c('readlength'))
+#dorado_readslength4<- fread(paste0(datapath, "/03_20211208_HD42_Lib1_dRNA002/readlength.dorado.txt"), col.names = c('readlength'))
+#dorado_readslength5<- fread(paste0(datapath, "/04_20211209_HD42_Lib2_RNA002/readlength.dorado.txt"), col.names = c('readlength'))
+#dorado_readslength6<- fread(paste0(datapath, "/05_20220105_HD43_dRNA_RNA002/readlength.dorado.txt"), col.names = c('readlength'))
+#dorado_readslength7<- fread(paste0(datapath, "/08_Cases-Treg-HD2/readlength.dorado.txt"), col.names = c('readlength'))
+#dorado_readslength8<- fread(paste0(datapath, "/12_Cases_Tconv-7/readlength.dorado.txt"), col.names = c('readlength'))
+
+
+#sets read ID-Column to Name of data set
+#dorado_readslength1$sample<-"Cases-Treg-5"
+#dorado_readslength2$sample<-"Cases-HD3-Treg-3"
+#dorado_readslength3$sample<-"Cases-HD3-Treg-6"
+#dorado_readslength4$sample<-"HD42_Lib1"
+#dorado_readslength5$sample<-"HD42_Lib2"
+#dorado_readslength6$sample<-"HD43"
+#dorado_readslength7$sample<-"Cases-Treg-HD2"
+#dorado_readslength8$sample<-"Cases_Tconv-7"
+
+#combine files to one 
+#whole_dorado_readslength <- rbind(dorado_readslength1,dorado_readslength2,dorado_readslength3,dorado_readslength4,dorado_readslength5,dorado_readslength6,dorado_readslength7,dorado_readslength8)
+   #removes unused data, to save RAM capacity
+#    rm(dorado_readslength1,dorado_readslength2,dorado_readslength3,dorado_readslength4,dorado_readslength5,dorado_readslength6,dorado_readslength7,dorado_readslength8)
+
+#puts the data into the preferred order
+#whole_dorado_readslength$sample <- factor(whole_dorado_readslength$sample,
+#                              levels=c("HD42_Lib1","HD42_Lib2","HD43","Cases-Treg-5","Cases-HD3-Treg-3","Cases-HD3-Treg-6",
+#                                       "Cases-Treg-HD2","Cases_Tconv-7"))
+
+#identifies the 002 runs and marks them as a destinct group for filling later
+#whole_dorado_readslength$group <- factor(ifelse(whole_dorado_readslength$sample %in% c("HD42_Lib1","HD42_Lib2","HD43"), "002-chemistry", "004-chemistry"))   
+
+#creates violin plots
+#dorado_readslength_v <- ggplot(whole_dorado_readslength, 
+#                  aes(x=sample, y=readlength)) + 
+#                  geom_violin(scale = "width", aes(fill =group))  + 
+#                  scale_fill_manual(values=c("002-chemistry"="#ffee5a", "004-chemistry"="#2ab07f")) +  
+#                  geom_boxplot(width=0.03,  outlier.shape = NA) + 
+#                  labs(x = NULL)+
+#                  scale_y_continuous(limits = c(0, 5000)) +
+#                  ggtitle ("Length of all aligning reads\nafter basecalling") + 
+#                  theme_classic() +
+#                  theme(text=element_text(family="serif", size=25))+
+#                  theme(axis.text.x = element_text(angle = 45, hjust = 1, size=27))+
+#                  theme(legend.position = "bottom")+
+#                  theme(legend.title=element_blank())
+
+``` 
+
+#Read length distribution 
+#all reads aligning to FOXP3
+```{r} 
+#reads files and creates a dataframe
+FOXP3_readslength1<- fread(paste0(datapath, "/13_Cases-Treg-5/readlength.FOXP3.aligning.txt"), col.names = c('readlength'))
+FOXP3_readslength2<- fread(paste0(datapath, "/01_Cases-HD3-Treg-3/readlength.FOXP3.aligning.txt"), col.names = c('readlength'))
+FOXP3_readslength3<- fread(paste0(datapath, "/02_Cases-HD3-Treg-6/readlength.FOXP3.aligning.txt"), col.names = c('readlength'))
+FOXP3_readslength4<- fread(paste0(datapath, "/03_20211208_HD42_Lib1_dRNA002/readlength.FOXP3.aligning.txt"), col.names = c('readlength'))
+FOXP3_readslength5<- fread(paste0(datapath, "/04_20211209_HD42_Lib2_RNA002/readlength.FOXP3.aligning.txt"), col.names = c('readlength'))
+FOXP3_readslength6<- fread(paste0(datapath, "/05_20220105_HD43_dRNA_RNA002/readlength.FOXP3.aligning.txt"), col.names = c('readlength'))
+FOXP3_readslength7<- fread(paste0(datapath, "/08_Cases-Treg-HD2/readlength.FOXP3.aligning.txt"), col.names = c('readlength'))
+FOXP3_readslength8<- fread(paste0(datapath, "/12_Cases_Tconv-7/readlength.FOXP3.aligning.txt"), col.names = c('readlength'))
+
+
+#sets read ID-Column to Name of data set
+FOXP3_readslength1$sample<-"Cases-Treg-5"
+FOXP3_readslength2$sample<-"Cases-HD3-Treg-3"
+FOXP3_readslength3$sample<-"Cases-HD3-Treg-6"
+FOXP3_readslength4$sample<-"HD42_Lib1"
+FOXP3_readslength5$sample<-"HD42_Lib2"
+FOXP3_readslength6$sample<-"HD43"
+FOXP3_readslength7$sample<-"Cases-Treg-HD2"
+FOXP3_readslength8$sample<-"Cases_Tconv-7"
+
+#combine files to one 
+whole_FOXP3_readslength <- rbind(FOXP3_readslength4,FOXP3_readslength5,FOXP3_readslength6,FOXP3_readslength1,FOXP3_readslength2,FOXP3_readslength3,FOXP3_readslength7,FOXP3_readslength8)
+   #removes unused data, to save RAM capacity
+    rm(FOXP3_readslength4,FOXP3_readslength5,FOXP3_readslength6,FOXP3_readslength1,FOXP3_readslength2,FOXP3_readslength3,FOXP3_readslength7,FOXP3_readslength8)
+    
+#puts the data into the preferred order
+whole_FOXP3_readslength$sample <- factor(whole_FOXP3_readslength$sample,
+                              levels=c("Cases-Treg-HD2","Cases-HD3-Treg-3"))#,"HD42_Lib1","HD42_Lib2","HD43"))#,"Cases_Tconv-7","Cases-HD3-Treg-6","Cases-Treg-5"))
+
+#removes NA entries (all removed)
+whole_FOXP3_readslength<-na.omit(whole_FOXP3_readslength)
+
+#identifies the 002 runs and marks them as a destinct group for filling later
+whole_FOXP3_readslength$group <- factor(ifelse(whole_FOXP3_readslength$sample %in% c("HD42_Lib1","HD42_Lib2","HD43"), "002-chemistry", "004-chemistry"))          
+
+
+#creates violin plots
+FOXP3_readslength_v <- ggplot(whole_FOXP3_readslength, 
+                  aes(x=sample, y=readlength)) + 
+                  geom_violin(scale = "width", aes(fill =group))  + 
+                  scale_fill_manual(values=c("002-chemistry"="#ffee5a", "004-chemistry"="#2ab07f")) +  
+                  geom_boxplot(width=0.03,  outlier.shape = NA) + 
+                  labs(x = NULL)+
+                  scale_y_continuous(limits = c(0, 5500)) +
+                  #stat_summary(fun=mean, geom="text", aes(label=round(..y.., 1)), vjust=-0.5, size=4, col="red") + #shows average in plot!
+                  #stat_summary(fun=median, geom="text", aes(label=round(..y.., 1)), vjust=-1.5, size=4, col="blue") + #shows median in plot
+                  ggtitle ("Length of all reads aligning \nto FOXP3") + 
+                  theme_classic() +
+                  theme(text=element_text(family="serif", size=25))+
+                  theme(axis.text.x = element_text(angle = 45, hjust = 1, size=27))+
+                  geom_hline(yintercept = 2264, color = "red")+
+                  theme(legend.position = "none") 
+                  #theme(legend.position = "bottom")+
+                  #theme(legend.title=element_blank())
+
+
+#(FOXP3_readslength_v)
+
+
+``` 
+
+#Read length distribution 
+#all reads aligning to HG38
+```{r} 
+#reads files and creates a dataframe
+HG38_readslength1<- fread(paste0(datapath, "/13_Cases-Treg-5/readlength.nonENO2.aligning.txt"), col.names = c('readlength'))
+HG38_readslength2<- fread(paste0(datapath, "/01_Cases-HD3-Treg-3/readlength.nonENO2.aligning.txt"), col.names = c('readlength'))
+HG38_readslength3<- fread(paste0(datapath, "/02_Cases-HD3-Treg-6/readlength.nonENO2.aligning.txt"), col.names = c('readlength'))
+HG38_readslength4<- fread(paste0(datapath, "/03_20211208_HD42_Lib1_dRNA002/readlength.nonENO2.aligning.txt"), col.names = c('readlength'))
+HG38_readslength5<- fread(paste0(datapath, "/04_20211209_HD42_Lib2_RNA002/readlength.nonENO2.aligning.txt"), col.names = c('readlength'))
+HG38_readslength6<- fread(paste0(datapath, "/05_20220105_HD43_dRNA_RNA002/readlength.nonENO2.aligning.txt"), col.names = c('readlength'))
+HG38_readslength7<- fread(paste0(datapath, "/08_Cases-Treg-HD2/readlength.nonENO2.aligning.txt"), col.names = c('readlength'))
+HG38_readslength8<- fread(paste0(datapath, "/12_Cases_Tconv-7/readlength.nonENO2.aligning.txt"), col.names = c('readlength'))
+
+
+#sets read ID-Column to Name of data set
+HG38_readslength1$sample<-"Cases-Treg-5"
+HG38_readslength2$sample<-"Cases-HD3-Treg-3"
+HG38_readslength3$sample<-"Cases-HD3-Treg-6"
+HG38_readslength4$sample<-"HD42_Lib1"
+HG38_readslength5$sample<-"HD42_Lib2"
+HG38_readslength6$sample<-"HD43"
+HG38_readslength7$sample<-"Cases-Treg-HD2"
+HG38_readslength8$sample<-"Cases_Tconv-7"
+
+#combine files to one 
+whole_HG38_readslength <- rbind(HG38_readslength1,HG38_readslength2,HG38_readslength3,HG38_readslength4,HG38_readslength5,HG38_readslength6,HG38_readslength7,HG38_readslength8)
+  #removes unused data, to save RAM capacity
+    rm(HG38_readslength1,HG38_readslength2,HG38_readslength3,HG38_readslength4,HG38_readslength5,HG38_readslength6,HG38_readslength7,HG38_readslength8)
+
+#puts the data into the preferred order
+whole_HG38_readslength$sample <- factor(whole_HG38_readslength$sample,
+                              levels=c("Cases-Treg-HD2","Cases-HD3-Treg-3"))#,"HD42_Lib1","HD42_Lib2","HD43"))#,"Cases_Tconv-7","Cases-HD3-Treg-6","Cases-Treg-5"))
+
+#removes NA entries (all removed)
+whole_HG38_readslength<-na.omit(whole_HG38_readslength)
+
+#identifies the 002 runs and marks them as a destinct group for filling later
+whole_HG38_readslength$group <- factor(ifelse(whole_HG38_readslength$sample %in% c("HD42_Lib1","HD42_Lib2","HD43"), "002-chemistry", "004-chemistry"))   
+
+#creates violin plots
+HG38_readslength_v <- ggplot(whole_HG38_readslength, 
+                  aes(x=sample, y=readlength)) + 
+                  geom_violin(scale = "width", aes(fill =group))  + 
+                  scale_fill_manual(values=c("002-chemistry"="#ffee5a", "004-chemistry"="#2ab07f")) +   
+                  geom_boxplot(width=0.03,  outlier.shape = NA) + 
+                  labs(x = NULL)+
+                  scale_y_continuous(limits = c(0, 5000)) +
+                  #stat_summary(fun=mean, geom="text", aes(label=round(..y.., 1)), vjust=-0.5, size=4, col="red") + #shows average in plot!
+                  #stat_summary(fun=median, geom="text", aes(label=round(..y.., 1)), vjust=-1.5, size=4, col="blue") + #shows median in plot
+                  ggtitle ("Length of all reads aligning \nto HG38") + 
+                  theme_classic() +
+                  theme(text=element_text(family="serif", size=25))+
+                  theme(axis.text.x = element_text(angle = 45, hjust = 1, size=27))+
+                  theme(legend.position = "none")
+                  #theme(legend.position = "bottom")+
+                  #theme(legend.title=element_blank())
+(HG38_readslength_v)
+``` 
+
+#Read length distribution 
+#reads not aligning to HG38 or ENO2
+```{r} 
+#reads files and creates a dataframe
+nonalign_readslength1<- fread(paste0(datapath, "/13_Cases-Treg-5/readlength.nonaligning.txt"), col.names = c('readlength'))
+nonalign_readslength2<- fread(paste0(datapath, "/01_Cases-HD3-Treg-3/readlength.nonaligning.txt"), col.names = c('readlength'))
+nonalign_readslength3<- fread(paste0(datapath, "/02_Cases-HD3-Treg-6/readlength.nonaligning.txt"), col.names = c('readlength'))
+nonalign_readslength4<- fread(paste0(datapath, "/03_20211208_HD42_Lib1_dRNA002/readlength.nonaligning.txt"), col.names = c('readlength'))
+nonalign_readslength5<- fread(paste0(datapath, "/04_20211209_HD42_Lib2_RNA002/readlength.nonaligning.txt"), col.names = c('readlength'))
+nonalign_readslength6<- fread(paste0(datapath, "/05_20220105_HD43_dRNA_RNA002/readlength.nonaligning.txt"), col.names = c('readlength'))
+nonalign_readslength7<- fread(paste0(datapath, "/08_Cases-Treg-HD2/readlength.nonaligning.txt"), col.names = c('readlength'))
+nonalign_readslength8<- fread(paste0(datapath, "/12_Cases_Tconv-7/readlength.nonaligning.txt"), col.names = c('readlength'))
+
+
+#sets read ID-Column to Name of data set
+nonalign_readslength1$sample<-"Cases-Treg-5"
+nonalign_readslength2$sample<-"Cases-HD3-Treg-3"
+nonalign_readslength3$sample<-"Cases-HD3-Treg-6"
+nonalign_readslength4$sample<-"HD42_Lib1"
+nonalign_readslength5$sample<-"HD42_Lib2"
+nonalign_readslength6$sample<-"HD43"
+nonalign_readslength7$sample<-"Cases-Treg-HD2"
+nonalign_readslength8$sample<-"Cases_Tconv-7"
+
+#combine files to one 
+whole_nonalign_readslength <- rbind(nonalign_readslength1,nonalign_readslength2,nonalign_readslength3,nonalign_readslength4,nonalign_readslength5,nonalign_readslength6,nonalign_readslength7,nonalign_readslength8)
+
+  #removes unused data, to save RAM capacity
+    rm(nonalign_readslength1,nonalign_readslength2,nonalign_readslength3,nonalign_readslength4,nonalign_readslength5,nonalign_readslength6,nonalign_readslength7,nonalign_readslength8)
+
+#puts the data into the preferred order
+whole_nonalign_readslength$sample <- factor(whole_nonalign_readslength$sample,
+                              levels=c("Cases-Treg-HD2","Cases-HD3-Treg-3"))#,"Cases_Tconv-7","Cases-HD3-Treg-6","Cases-Treg-5"))
+
+#removes NA entries (all removed)
+whole_nonalign_readslength<-na.omit(whole_nonalign_readslength)
+
+#identifies the 002 runs and marks them as a destinct group for filling later
+whole_nonalign_readslength$group <- factor(ifelse(whole_nonalign_readslength$sample %in% c("HD42_Lib1","HD42_Lib2","HD43"), "002-chemistry", "004-chemistry"))  
+    
+    
+#creates violin plots
+nonalign_readslength_v <- ggplot(whole_nonalign_readslength, 
+                  aes(x=sample, y=readlength)) + 
+                  geom_violin(scale = "width", aes(fill =group))  + 
+                  scale_fill_manual(values=c("002-chemistry"="#ffee5a", "004-chemistry"="#2ab07f")) + 
+                  geom_boxplot(width=0.03,  outlier.shape = NA) + 
+                  labs(x = NULL)+
+                  scale_y_continuous(limits = c(0, 5000)) +
+                  ggtitle ("Length of all non-aligning reads") + 
+                  theme_classic() +
+                  theme(text=element_text(family="serif", size=25))+
+                  theme(axis.text.x = element_text(angle = 45, hjust = 1, size=27))+
+                  theme(legend.position = "none")
+                  #theme(legend.position = "bottom")+
+                  #theme(legend.title=element_blank())
+#(nonalign_readslength_v)
+``` 
+
+##Plot Creation of read length overview
+```{r} 
+#(all_readslength_v | FOXP3_readslength_v)/
+ # (HG38_readslength_v | nonalign_readslength_v)
+``` 
+
+##Final Plot
+```{r} 
+##png
+#png(filename="sample Overview.png", width =2200, height = 1900, units = "px") 
+#(((FOXP3_v | whole_v | whole_zoom_v ) + 
+#    plot_layout(guides ="collect")&
+#        theme(legend.position = 'bottom',
+#        legend.box = "horizontal"))/
+#((FOXP3_counts | whole_counts| readcomposition_bp)+
+#   plot_layout(guides ="collect")&
+#        theme(legend.position = 'bottom',
+#        legend.box = "horizontal"))/
+#(all_readslength_v | FOXP3_readslength_v)/
+#((HG38_readslength_v | nonalign_readslength_v) +
+#        plot_layout(guides ="collect")&
+#        theme(legend.position = 'bottom',
+#        legend.box = "horizontal"))+
+#      plot_annotation(tag_levels = 'A'))
+#dev.off()
+
+
+png(file="004_Poly(A) length Overview.png", width =1400, height = 1800, units = "px") 
+((FOXP3_v | whole_v)/
+((FOXP3_counts | whole_counts)+
+   plot_layout(guides ="collect")&
+            theme(legend.position = 'bottom',
+        legend.box = "horizontal"))+
+plot_annotation(tag_levels = 'A'))
+dev.off()
+
+png(file="004_read length Overview.png", width =1400, height = 1800, units = "px") 
+(((all_readslength_v | HG38_readslength_v |readcomposition_bp)+ 
+            theme(legend.position = 'bottom',
+        legend.box = "horizontal"))/
+(FOXP3_readslength_v | nonalign_readslength_v)+ 
+        plot_annotation(tag_levels = 'A'))
+dev.off()
+
+
+##pdf
+#pdf(file="sample Overview.pdf", width =24, height = 20) 
+#  (FOXP3_v | whole_v | whole_zoom_v ) /
+#(FOXP3_counts | whole_counts| readcomposition_bp)/
+#(all_readslength_v | FOXP3_readslength_v)/
+#(HG38_readslength_v | nonalign_readslength_v)
+#dev.off()
+
+#pdf(file="Poly(A) length Overview.pdf", width =24, height = 20) 
+#  (FOXP3_v | whole_v | whole_zoom_v ) /
+#(FOXP3_counts | whole_counts)
+#dev.off()
+
+#pdf(file="read length Overview.pdf", width =24, height = 20) 
+# (all_readslength_v | FOXP3_readslength_v |readcomposition_bp)/
+#(HG38_readslength_v | nonalign_readslength_v)
+#dev.off()
+``` 
